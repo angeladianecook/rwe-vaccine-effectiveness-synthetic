@@ -77,12 +77,12 @@ data-quality finding.
 
 **Survival (descriptive cumulative incidence):**
 
-![Cumulative incidence by vaccination status](docs/img/km_curve.png)
+![Cumulative incidence by vaccination status](docs/img/km_cumulative_incidence.png)
 
 **The QC catch** — cross-source reconciliation flags Gardasil 9 (HPV9) doses
 recorded *before that product existed*, contradicted by the members' claims:
 
-![Registry doses over time, showing the planted anomaly](docs/img/qc_doses_over_time.png)
+![Registry doses over time, showing the planted anomaly](docs/img/qc_anomaly_over_time.png)
 
 This is the reproducible version of a real data-quality story: an analyst plots
 administrations over time, sees impossible product/date combinations in one
