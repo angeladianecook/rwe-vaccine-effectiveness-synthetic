@@ -107,10 +107,12 @@ plot_km <- function(kmdf) {
   ggplot(kmdf, aes(time_years, cum_inc_pct, color = group)) +
     geom_step(linewidth = 0.8) +
     labs(title = "Cumulative incidence of CIN2+/cervical cancer",
-         subtitle = "Descriptive, by ever-vaccinated status — SYNTHETIC DATA (methods demo)",
+         subtitle = "By ever-vaccinated status (synthetic data)",
          x = "Years since index", y = "Cumulative incidence (%)", color = NULL) +
     theme_minimal(base_size = 12) +
     theme(legend.position = "top",
+          plot.title = element_text(size = 13, face = "bold"),
+          plot.subtitle = element_text(size = 10, colour = "grey35"),
           # Solid white background so the figure reads on light AND dark pages.
           plot.background = element_rect(fill = "white", colour = NA))
 }

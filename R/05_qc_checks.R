@@ -88,10 +88,12 @@ doses_over_time_plot <- function(registry, availability) {
     annotate("text", x = 2014.2, y = max(agg$n), hjust = 0, vjust = 1,
              size = 3, color = "grey40", label = "Gardasil 9 US availability (2014)") +
     labs(title = "Registry HPV doses over time, by product",
-         subtitle = "Gardasil 9 (HPV9) doses recorded before 2014 are impossible — the planted anomaly",
+         subtitle = "HPV9 doses before 2014 are impossible: the planted anomaly",
          x = "Dose year", y = "Doses recorded", color = "Product") +
     theme_minimal(base_size = 12) +
     theme(legend.position = "top",
+          plot.title = element_text(size = 13, face = "bold"),
+          plot.subtitle = element_text(size = 10, colour = "grey35"),
           # Solid white background so the figure reads on light AND dark pages.
           plot.background = element_rect(fill = "white", colour = NA))
 }
