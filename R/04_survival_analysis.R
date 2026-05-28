@@ -110,7 +110,9 @@ plot_km <- function(kmdf) {
          subtitle = "Descriptive, by ever-vaccinated status — SYNTHETIC DATA (methods demo)",
          x = "Years since index", y = "Cumulative incidence (%)", color = NULL) +
     theme_minimal(base_size = 12) +
-    theme(legend.position = "top")
+    theme(legend.position = "top",
+          # Solid white background so the figure reads on light AND dark pages.
+          plot.background = element_rect(fill = "white", colour = NA))
 }
 
 main <- function() {

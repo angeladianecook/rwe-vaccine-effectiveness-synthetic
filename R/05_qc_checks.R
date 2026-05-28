@@ -90,7 +90,10 @@ doses_over_time_plot <- function(registry, availability) {
     labs(title = "Registry HPV doses over time, by product",
          subtitle = "Gardasil 9 (HPV9) doses recorded before 2014 are impossible — the planted anomaly",
          x = "Dose year", y = "Doses recorded", color = "Product") +
-    theme_minimal(base_size = 12) + theme(legend.position = "top")
+    theme_minimal(base_size = 12) +
+    theme(legend.position = "top",
+          # Solid white background so the figure reads on light AND dark pages.
+          plot.background = element_rect(fill = "white", colour = NA))
 }
 
 format_qc_report <- function(s) {
