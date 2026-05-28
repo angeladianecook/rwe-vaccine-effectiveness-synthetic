@@ -1,8 +1,8 @@
 # rwe-vaccine-effectiveness-synthetic
 
 I'm a **healthcare data scientist** working in real-world evidence (RWE) and
-pharmacoepidemiology. My production work — on the **Pfizer COVID-19 RWE team**
-and at **Target RWE** — is proprietary and can't be shared. **This repository
+pharmacoepidemiology. My production work, on the **Pfizer COVID-19 RWE team**
+and at **Target RWE**, is proprietary and can't be shared. **This repository
 recreates those exact competencies, end to end, on fully synthetic claims data**
 so every step is inspectable, runnable, and reproducible.
 
