@@ -74,7 +74,10 @@ periods AS (
     GROUP BY member_id, period_id
 ),
 
--- --- Apply baseline length, age, sex, and study-window criteria ---------------
+-- --- Structural cohort entry: first period with enough baseline, in window ----
+-- Cohort entry is the FIRST time a member has the required continuous baseline
+-- (index = baseline end). Demographic eligibility is then checked AT that entry
+-- below, rather than letting it pick a later, more favorable index.
 qualifying AS (
     SELECT
         p.member_id,
@@ -90,13 +93,11 @@ qualifying AS (
     FROM periods p
     CROSS JOIN params pr
     JOIN member_demographics d USING (member_id)
-    WHERE (p.cov_end - p.cov_start) >= pr.baseline_days                       -- continuous enrollment
-      AND d.sex = 'F'                                                        -- cervical-outcome population
-      AND EXTRACT(YEAR FROM p.cov_start + pr.baseline_days) - d.birth_year >= pr.min_age  -- adult at index
-      AND (p.cov_start + pr.baseline_days) BETWEEN pr.study_start AND pr.study_end        -- index in study window
+    WHERE (p.cov_end - p.cov_start) >= pr.baseline_days                            -- continuous enrollment
+      AND (p.cov_start + pr.baseline_days) BETWEEN pr.study_start AND pr.study_end  -- index in study window
 )
 
--- --- Keep the first qualifying period; enforce washout & alive-at-index -------
+-- --- Apply demographic inclusion + washout/alive exclusions at cohort entry ----
 SELECT
     q.member_id,
     q.index_date,
@@ -115,6 +116,8 @@ SELECT
 FROM qualifying q
 LEFT JOIN mortality m USING (member_id)
 WHERE q.period_rank = 1
+  AND q.sex = 'F'                                          -- cervical-outcome population
+  AND q.age_at_index >= (SELECT min_age FROM params)       -- adult at index
   -- Washout: no prevalent CIN2+/cervical cancer on or before index.
   AND NOT EXISTS (
         SELECT 1 FROM medical_claims mc
