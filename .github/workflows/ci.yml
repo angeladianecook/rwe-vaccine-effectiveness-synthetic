@@ -1,8 +1,9 @@
 name: CI
 
-# Scaffold CI: on push/PR, generate a small synthetic dataset, run the pipeline,
-# and run the testthat suite. Fails the build if any contract/recovery test
-# fails. Stages are wired to the Makefile (see PLAN.md §6).
+# On push/PR: install dependencies, smoke-run the whole pipeline on a small
+# synthetic dataset, and run the testthat suite (reproducibility, attrition,
+# anomaly catch). Runs in rocker/r2u so install.packages() pulls precompiled
+# binaries (incl. duckdb) — no source compilation.
 
 on:
   push:
@@ -10,25 +11,26 @@ on:
   pull_request:
 
 jobs:
-  pipeline:
+  test:
     runs-on: ubuntu-latest
     container:
-      image: rocker/r-ver:4.4.1
+      image: rocker/r2u:22.04
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: System dependencies
+      - name: System tooling
         run: |
-          apt-get update && apt-get install -y --no-install-recommends \
-            make git libcurl4-openssl-dev libssl-dev libxml2-dev
+          apt-get update && apt-get install -y --no-install-recommends make
           rm -rf /var/lib/apt/lists/*
 
-      # TODO: restore R deps via renv once the lockfile exists.
-      # - name: Restore R packages
-      #   run: R -e "install.packages('renv'); renv::restore()"
+      - name: Install R packages
+        run: install2.r --error --skipinstalled DBI duckdb survival ggplot2 testthat
 
-      - name: Run pipeline (generate -> cohort -> analysis -> qc)
+      - name: Pipeline smoke run (small N, no dashboard)
+        env:
+          N_MEMBERS: "3000"
+          RWE_SEED: "20260528"
         run: make data cohort exposure outcome analysis qc
 
       - name: Run tests

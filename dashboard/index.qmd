@@ -1,31 +1,139 @@
 ---
 title: "Synthetic RWE HPV Vaccine-Effectiveness Study"
-subtitle: "Cohort attrition · KM curve · VE estimate · registry QC catch"
+subtitle: "Cohort attrition · survival · vaccine effectiveness · registry QC catch"
+date: today
 format:
   html:
     toc: true
+    toc-location: left
     embed-resources: true
+    theme: cosmo
+    fig-align: center
+execute:
+  echo: false
+  warning: false
+  message: false
 ---
 
-<!--
-  Quarto dashboard — one-page summary of the pipeline outputs.
-  Reads result artifacts written by R/04_survival_analysis.R and R/05_qc_checks.R.
-  Status: SCAFFOLD — section outline only; chunks to be filled in.
--->
+```{r setup}
+# Renders the pipeline outputs in results/ (produced by R/01-05). Paths are
+# relative to this file (dashboard/), so results/ is one level up.
+res <- function(...) file.path("..", "results", ...)
+read_res <- function(f) if (file.exists(res(f))) utils::read.csv(res(f)) else NULL
+library(knitr)
+```
 
-## Study at a glance
-
-_Placeholder — objective, design, and headline VE (see docs/protocol.md)._
+::: {.callout-warning}
+## Synthetic data — methods demonstration only
+Every figure on this page was computed on **fully synthetic** claims generated
+by this repository, with a "true" effect deliberately built into the data
+generator. **Nothing here is a real HPV vaccine-effectiveness estimate.** The
+purpose is to demonstrate the analysis and the data-quality control end to end,
+and to show that the pipeline recovers the planted ground truth.
+:::
 
 ## Cohort attrition
 
-_Placeholder — feasibility / attrition table (sql/feasibility_counts.sql)._
+How the source population narrows to the analytic cohort through each
+pre-specified inclusion/exclusion criterion (CONSORT-style).
+
+```{r attrition}
+attr <- read_res("attrition_table.csv")
+if (!is.null(attr)) {
+  kable(attr,
+        col.names = c("Step", "Criterion", "Remaining", "Excluded", "% of source"),
+        align = c("c", "l", "r", "r", "r"))
+}
+```
+
+```{r attrition-note}
+#| output: asis
+if (!is.null(attr)) {
+  cat(sprintf("**Final analytic cohort: %s members.**",
+              format(tail(attr$n_remaining, 1), big.mark = ",")))
+}
+```
+
+## Outcome ascertainment
+
+Members, incident CIN2+/cervical-cancer events, and person-years by exposure
+group.
+
+```{r outcome}
+out <- read_res("outcome_summary.csv")
+if (!is.null(out)) kable(out, col.names = c("Exposure", "Members", "Events", "Person-years"))
+```
 
 ## Survival analysis
 
-_Placeholder — Kaplan-Meier curve, incidence rates, adjusted Cox → VE._
+Descriptive cumulative incidence by ever-vaccinated status. The primary
+estimate comes from the time-varying Cox model below (the KM figure is
+descriptive and subject to immortal-time caveats).
 
-## Data-quality catch
+```{r km, fig.cap="Cumulative incidence of CIN2+/cervical cancer (synthetic data)."}
+if (file.exists(res("km_curve.png"))) include_graphics(res("km_curve.png"))
+```
 
-_Placeholder — administrations-over-time-by-product plot showing the implausible
-registry doses (CVX × date vs. availability window), flagged and quantified._
+#### Incidence rates (per 1,000 person-years)
+
+```{r incidence}
+inc <- read_res("incidence_rates.csv")
+if (!is.null(inc)) {
+  inc$person_years    <- round(inc$person_years, 0)
+  inc$rate_per_1000py <- round(inc$rate_per_1000py, 2)
+  kable(inc, col.names = c("Group", "Events", "Person-years", "Rate / 1,000 PY"))
+}
+```
+
+#### Vaccine effectiveness `VE = (1 − HR) × 100%`
+
+```{r ve}
+ve <- read_res("ve_estimates.csv")
+if (!is.null(ve)) {
+  fmt <- data.frame(
+    Model    = ve$model,
+    Events   = ve$n_events,
+    HR       = sprintf("%.2f", ve$hr),
+    `HR 95% CI` = sprintf("%.2f to %.2f", ve$hr_lci, ve$hr_uci),
+    `VE (%)`    = sprintf("%.1f", ve$ve_pct),
+    `VE 95% CI` = sprintf("%.0f to %.0f%%", ve$ve_lci, ve$ve_uci),
+    check.names = FALSE)
+  kable(fmt, align = "lrrrrr")
+}
+```
+
+```{r ve-headline}
+#| output: asis
+if (!is.null(ve)) {
+  a <- ve[nrow(ve), ]
+  cat(sprintf("**Adjusted VE = %.0f%% (95%% CI %.0f-%.0f%%)** -- recovering the generator's true VE of 55%%.",
+              a$ve_pct, a$ve_lci, a$ve_uci))
+}
+```
+
+## Data-quality finding (the catch)
+
+Cross-source reconciliation independently re-discovered a **systematic
+vaccine-classification anomaly** planted in one registry feed: Gardasil 9
+(HPV9) doses recorded **before that product existed**, contradicted by the
+members' claims-derived product.
+
+```{r qc-headline}
+#| output: asis
+flagged <- read_res("qc_flagged_members.csv")
+if (!is.null(flagged)) {
+  src <- paste(sort(unique(flagged$source)), collapse = ", ")
+  cat(sprintf("**%s registry records across %s patients flagged**, entirely within the `%s` feed.",
+              format(nrow(flagged), big.mark = ","),
+              format(length(unique(flagged$member_id)), big.mark = ","), src))
+}
+```
+
+```{r dot, fig.cap="Registry doses over time by product. HPV9 doses before 2014 are impossible - the planted anomaly."}
+if (file.exists(res("doses_over_time.png"))) include_graphics(res("doses_over_time.png"))
+```
+
+**Impact & handling.** The error misclassifies *product*, not dose presence, so
+the all-product VE above is robust while product-specific estimates are not.
+The full finding and the vendor-escalation plan are in
+[`docs/results_summary.md`](../docs/results_summary.md).

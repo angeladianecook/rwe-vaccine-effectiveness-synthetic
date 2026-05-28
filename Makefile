@@ -1,8 +1,10 @@
-# Makefile — one-command pipeline for the synthetic RWE vaccine-effectiveness study.
+# Makefile — one-command pipeline for the synthetic RWE HPV vaccine-effectiveness study.
 #
-# `make all` runs the full pipeline end to end. Each stage is also runnable on
-# its own. NOTE: the R/SQL stages are scaffolded but not yet implemented; the
-# recipes below define the intended execution contract (see PLAN.md).
+# `make all` runs the full pipeline end to end:
+#   generate -> SQL cohort/exposure -> outcome -> survival analysis -> QC ->
+#   render dashboard -> tests.
+# Each stage is also runnable on its own. Override the cohort size with
+# `make data N_MEMBERS=2000` (handy for a quick run); RWE_SEED sets the seed.
 
 RSCRIPT := Rscript
 DB      := data/synthetic/rwe.duckdb
@@ -14,13 +16,13 @@ all: data cohort exposure outcome analysis qc dashboard test ## Run the whole pi
 data: ## Generate the synthetic claims universe (+ planted anomaly)
 	$(RSCRIPT) R/00_generate_synthetic_data.R
 
-cohort: data ## Apply eligibility / continuous-enrollment to build the cohort
+cohort: data ## Build the cohort and log the attrition table
 	$(RSCRIPT) R/01_build_cohort.R
 
-exposure: cohort ## Assign index dates and exposed/unexposed person-time
+exposure: cohort ## Index exposure and define follow-up windows
 	$(RSCRIPT) R/02_exposure_indexing.R
 
-outcome: exposure ## Ascertain outcome events and censoring
+outcome: exposure ## Ascertain outcomes; assemble the analysis set
 	$(RSCRIPT) R/03_outcome_ascertainment.R
 
 analysis: outcome ## Kaplan-Meier, incidence rates, Cox -> vaccine effectiveness
@@ -30,16 +32,17 @@ qc: outcome ## Cross-source reconciliation; detect/quantify the planted anomaly
 	$(RSCRIPT) R/05_qc_checks.R
 
 dashboard: analysis qc ## Render the Quarto summary dashboard
-	quarto render dashboard
+	quarto render dashboard/index.qmd
 
 test: ## Run the testthat suite
 	$(RSCRIPT) tests/testthat.R
 
 clean: ## Remove generated data and outputs
 	rm -f $(DB) $(DB).wal
-	rm -f data/synthetic/*.parquet
-	rm -rf output results
-	rm -f dashboard/*.html
+	rm -rf data/synthetic/sample data/synthetic/ground_truth.rds
+	rm -rf results
+	rm -f dashboard/index.html
+	rm -rf dashboard/index_files
 
 help: ## Show available targets
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) \

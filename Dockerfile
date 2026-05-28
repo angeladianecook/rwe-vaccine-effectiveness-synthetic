@@ -1,36 +1,28 @@
-# Pinned R base image for deterministic builds.
-FROM rocker/r-ver:4.4.1
+# Reproducible image for the synthetic RWE HPV vaccine-effectiveness pipeline.
+#
+# Base: rocker/r2u provides R on Ubuntu 22.04 with bspm, so install.packages()
+# pulls precompiled apt binaries (incl. duckdb) — fast, deterministic builds,
+# no source compilation.
+FROM rocker/r2u:22.04
 
-# System libraries commonly needed by the analysis/dashboard stack.
+# System tooling: make for the pipeline, curl/gdebi to install Quarto.
 RUN apt-get update && apt-get install -y --no-install-recommends \
-        make \
-        git \
-        libcurl4-openssl-dev \
-        libssl-dev \
-        libxml2-dev \
-        libfontconfig1-dev \
-        libharfbuzz-dev \
-        libfribidi-dev \
-        libfreetype6-dev \
-        libpng-dev \
-        libtiff5-dev \
-        libjpeg-dev \
+        make git curl gdebi-core \
     && rm -rf /var/lib/apt/lists/*
 
-# Quarto for the dashboard (version pinned).
+# R package dependencies (binary installs via bspm).
+RUN install2.r --error --skipinstalled \
+        DBI duckdb survival ggplot2 testthat knitr rmarkdown
+
+# Quarto for the dashboard (pinned).
 ARG QUARTO_VERSION=1.5.57
 RUN curl -fsSL -o /tmp/quarto.deb \
         "https://github.com/quarto-dev/quarto-cli/releases/download/v${QUARTO_VERSION}/quarto-${QUARTO_VERSION}-linux-amd64.deb" \
-    && dpkg -i /tmp/quarto.deb \
+    && gdebi -n /tmp/quarto.deb \
     && rm /tmp/quarto.deb
 
 WORKDIR /work
-
-# Dependency restore happens via renv once the lockfile exists.
-# COPY renv.lock renv.lock
-# RUN R -e "install.packages('renv'); renv::restore()"
-
 COPY . /work
 
-# Default: run the full pipeline.
+# Default: run the whole pipeline end to end.
 CMD ["make", "all"]

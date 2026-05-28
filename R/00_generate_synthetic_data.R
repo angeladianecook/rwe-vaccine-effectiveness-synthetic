@@ -43,7 +43,7 @@ n_members  <- as.integer(Sys.getenv("N_MEMBERS", "50000"))
 study_start <- as.Date("2006-01-01")
 study_end   <- as.Date("2023-12-31")
 
-out_dir    <- file.path("data", "synthetic")
+out_dir    <- Sys.getenv("RWE_DATA_DIR", file.path("data", "synthetic"))
 sample_dir <- file.path(out_dir, "sample")
 db_path    <- file.path(out_dir, "rwe.duckdb")
 dir.create(sample_dir, recursive = TRUE, showWarnings = FALSE)
