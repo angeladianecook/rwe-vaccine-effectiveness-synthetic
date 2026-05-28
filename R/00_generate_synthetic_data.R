@@ -430,7 +430,8 @@ con <- dbConnect(duckdb::duckdb(), dbdir = db_path)
 for (nm in names(tables)) {
   dbWriteTable(con, nm, tables[[nm]], overwrite = TRUE)
   utils::write.csv(utils::head(tables[[nm]], 50),
-                   file.path(sample_dir, paste0(nm, ".csv")), row.names = FALSE)
+                   file.path(sample_dir, paste0(nm, ".csv")),
+                   row.names = FALSE, na = "")
 }
 dbDisconnect(con, shutdown = TRUE)
 
