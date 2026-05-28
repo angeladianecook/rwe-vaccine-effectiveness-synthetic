@@ -18,19 +18,27 @@ written yet** — the `R/` and `sql/` files are stubs with header contracts only
 
 ## 1. Scientific framing (what the study answers)
 
-**Question.** Among adults enrolled in a (synthetic) commercial/Medicare-style
-claims plan, what is the effectiveness of a vaccine against a defined acute
-outcome (e.g., hospitalization for the target infection), comparing vaccinated
-vs. unvaccinated person-time?
+**Theme.** **HPV vaccination** (Gardasil / Gardasil 9 / Cervarix) — a
+*prophylactic cancer-prevention* vaccine. This reuses the full RWE
+vaccine-effectiveness architecture (exposure-indexed cohort, claims + registry
+reconciliation, time-to-event) while putting the outcome in **oncology**.
+
+**Question.** Among (synthetic) commercially-insured individuals eligible for
+HPV vaccination, what is the effectiveness of HPV vaccination against an
+incident **high-grade cervical lesion (CIN2+/CIN3) or cervical cancer**,
+comparing vaccinated vs. unvaccinated person-time?
 
 **Design.** Observational new-user / exposure-indexed cohort with time-to-event
 analysis. Vaccine effectiveness (VE) is reported as `VE = (1 − HR) × 100%`,
 where HR is the adjusted hazard ratio from a Cox model (with a Kaplan–Meier and
-incidence-rate companion analysis).
+incidence-rate companion analysis). Because the cancer-prevention outcome has a
+longer latency than an acute infection, the synthetic follow-up window is
+defined explicitly in the protocol.
 
 **Estimand (plain language).** The relative reduction in the hazard of the
-outcome attributable to vaccination, over a defined follow-up window, in the
-eligible source population, adjusting for measured confounders.
+high-grade lesion / cervical-cancer outcome attributable to HPV vaccination,
+over a defined follow-up window, in the eligible source population, adjusting
+for measured confounders (including screening intensity).
 
 This is a *methods demonstration*, not a clinical claim. The "true" VE is a
 parameter baked into the data generator, so the analysis can be validated
@@ -87,11 +95,17 @@ cohort large enough to be interesting but small enough to run in CI.
 |---|---|---|---|
 | `enrollment` | member × coverage span | `member_id`, `enroll_start`, `enroll_end`, `plan_type` | Continuous-enrollment denominator |
 | `member_demographics` | member | `member_id`, `birth_year`, `sex`, `region` | Baseline covariates |
-| `medical_claims` | claim line | `member_id`, `claim_date`, `dx_code`, `proc_code`, `place_of_service` | Outcomes, comorbidities, vaccine admin (CPT) |
-| `pharmacy_claims` | fill | `member_id`, `fill_date`, `ndc`, `days_supply` | Comorbidity proxies; (optional) pharmacy-administered vaccines |
-| `vaccine_registry` | dose | `member_id`, `dose_date`, `vaccine_code`, `dose_number`, `source` | Second exposure source for cross-reconciliation |
+| `medical_claims` | claim line | `member_id`, `claim_date`, `dx_code`, `proc_code`, `place_of_service` | Outcome (CIN2+/cervical cancer dx), cervical screening (cytology/HPV test), comorbidities, HPV vaccine admin (CPT) |
+| `pharmacy_claims` | fill | `member_id`, `fill_date`, `ndc`, `days_supply` | Comorbidity proxies; (optional) pharmacy-administered HPV doses |
+| `vaccine_registry` | dose | `member_id`, `dose_date`, `cvx_code`, `dose_number`, `source` | Registry exposure source (modeled on a state IIS, e.g. CA CAIR2) for cross-reconciliation |
 | `mortality` | member | `member_id`, `death_date`, `source` | Competing-risk / censoring |
 | `provider` | provider | `provider_id`, `specialty`, `region` | Realism + provider-level checks |
+
+A small **product-availability lookup** accompanies the schema: each HPV product
+(`cvx_code`) maps to its real-world availability window — e.g. Gardasil
+(CVX 62, ~2006), Gardasil 9 (CVX 165, ~2014), Cervarix (CVX 118, ~2009; withdrawn
+from the US market ~2016). This table is what the QC step checks dose dates
+against (§4).
 
 **Ground-truth parameters** (hidden inside the generator, surfaced in tests):
 - True vaccine effectiveness (target HR).
@@ -103,21 +117,31 @@ cohort large enough to be interesting but small enough to run in CI.
 
 ## 4. The planted anomaly (the differentiator)
 
-The generator deliberately injects a **systematic vaccine-classification error**
-into one source feed: a defined subset of doses is miscoded so that the
-**registry-derived** vaccination status disagrees with the **claims-derived**
-status (e.g., a batch of CPT-coded administrations recorded under the wrong
-vaccine code, or a date-shift in one feed).
+Modeled on a real catch: a state immunization registry (here, a synthetic feed
+shaped like California's **CAIR2**) had **`(dose_date, cvx_code)` combinations
+that violate the product-availability timeline** — doses coded as a product
+before it was authorized, or as a withdrawn product after it left the market.
+The original tell was *plotting administrations over time by product* and seeing
+combinations that made no logical sense.
 
-- `05_qc_checks.R` detects it via **cross-source reconciliation** (registry vs.
-  claims), **flags** the affected `member_id`s, **quantifies** the
-  misclassification rate and its bias direction on the VE estimate, and writes a
-  QC report artifact.
+The generator deliberately injects this: a defined batch of `vaccine_registry`
+records is planted with **implausible date ↔ CVX pairs** (e.g., Gardasil 9 coded
+before ~2014, or Cervarix coded after its ~2016 US withdrawal), and these also
+**disagree with the claims-derived** product (CPT/NDC) for the same member.
+
+- `05_qc_checks.R` detects it two ways: (1) **internal plausibility** — each
+  `(dose_date, cvx_code)` checked against the product-availability lookup (§3),
+  plus the doses-over-time-by-product view; and (2) **cross-source
+  reconciliation** — registry-derived vs. claims-derived product. It **flags**
+  the affected `member_id`s, **quantifies** the misclassification rate and its
+  **bias direction on the VE estimate**, and writes a QC report artifact.
 - `docs/results_summary.md` explains the catch in plain English and how it would
-  be **escalated** (data-provider query, sensitivity analysis excluding affected
-  records, quantitative bias analysis).
+  be **escalated** (registry/data-provider query, sensitivity analysis excluding
+  affected records, quantitative bias analysis).
 - A testthat test asserts that the QC step **actually finds** the planted records
   (count within tolerance), so the "catch" is reproducible, not a story.
+- The dashboard renders the **administrations-over-time-by-product** plot so a
+  reviewer literally *sees* the implausible doses the way you originally did.
 
 This turns a real interview anecdote into something a reviewer can run and watch.
 
@@ -199,14 +223,18 @@ This turns a real interview anecdote into something a reviewer can run and watch
 
 ---
 
-## 9. Open decisions (flag before coding)
+## 9. Decisions
 
-- **Outcome & vaccine framing:** keep generic ("target infection / target
-  vaccine") or theme it (e.g., influenza, COVID-19, RSV, herpes zoster)?
+- **Outcome & vaccine framing:** ✅ **HPV vaccination** (Gardasil / Gardasil 9 /
+  Cervarix) → incident high-grade cervical lesion (CIN2+/CIN3) / cervical cancer.
+  Chosen as an oncology-adjacent study that reuses the COVID-VE architecture.
+- **Dashboard tech:** ✅ **Quarto** (static, CI-friendly).
+- **Anomaly:** ✅ registry `(dose_date, cvx_code)` availability-timeline
+  violations (CAIR2-shaped), cross-checked against claims (§4).
+
+Still open (flag before coding):
 - **Exposure model:** simple new-user exposed/unexposed, or time-varying
   exposure with a landmark to handle immortal time? (Latter is more impressive,
-  slightly more code.)
-- **Dashboard tech:** Quarto (static, CI-friendly — recommended) vs. Shiny
-  (interactive, needs a running process).
+  slightly more code. Recommended given the longer cancer-prevention latency.)
 - **Cohort size defaults:** big enough to be realistic vs. fast enough for CI.
 ```

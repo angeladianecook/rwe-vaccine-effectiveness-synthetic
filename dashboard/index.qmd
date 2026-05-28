@@ -1,6 +1,6 @@
 ---
-title: "Synthetic RWE Vaccine-Effectiveness Study"
-subtitle: "Cohort attrition · KM curve · VE estimate · QC catch"
+title: "Synthetic RWE HPV Vaccine-Effectiveness Study"
+subtitle: "Cohort attrition · KM curve · VE estimate · registry QC catch"
 format:
   html:
     toc: true
@@ -27,4 +27,5 @@ _Placeholder — Kaplan-Meier curve, incidence rates, adjusted Cox → VE._
 
 ## Data-quality catch
 
-_Placeholder — the planted cross-source anomaly, flagged and quantified._
+_Placeholder — administrations-over-time-by-product plot showing the implausible
+registry doses (CVX × date vs. availability window), flagged and quantified._

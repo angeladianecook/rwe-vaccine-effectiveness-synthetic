@@ -1,7 +1,8 @@
 # =============================================================================
 # 03_outcome_ascertainment.R
 # -----------------------------------------------------------------------------
-# Purpose : Define outcome events from claims, apply censoring (disenrollment,
+# Purpose : Define the outcome (incident high-grade cervical lesion CIN2+/CIN3
+#           or cervical cancer) from claims, apply censoring (disenrollment,
 #           death, end of study), and compute follow-up time per member.
 #
 # Reads   : data/synthetic/rwe.duckdb :: exposure, medical_claims, mortality
