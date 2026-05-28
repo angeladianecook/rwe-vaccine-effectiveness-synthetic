@@ -1,0 +1,19 @@
+-- =============================================================================
+-- schema.sql
+-- -----------------------------------------------------------------------------
+-- DuckDB DDL for the synthetic claims universe. Defines the tables that
+-- 00_generate_synthetic_data.R populates. Grain and columns are documented in
+-- docs/data_dictionary.md.
+--
+--   enrollment          member x coverage span  (continuous-enrollment denom)
+--   member_demographics member                  (baseline covariates)
+--   medical_claims      claim line              (dx/proc; outcomes, vaccine CPT)
+--   pharmacy_claims     fill                    (comorbidity proxies)
+--   vaccine_registry    dose                    (second exposure source)
+--   mortality           member                  (competing risk / censoring)
+--   provider            provider                (realism + provider checks)
+--
+-- Status: SCAFFOLD — table contracts to be filled in. Not yet implemented.
+-- =============================================================================
+
+-- TODO: CREATE TABLE statements per docs/data_dictionary.md

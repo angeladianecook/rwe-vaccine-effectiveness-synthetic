@@ -1,0 +1,14 @@
+-- =============================================================================
+-- feasibility_counts.sql
+-- -----------------------------------------------------------------------------
+-- Attrition / feasibility counts — the "can we even do this study" query a
+-- study lead runs before committing. Produces stepwise counts from source
+-- population through each eligibility criterion to the final analysis set.
+--
+-- Inputs : enrollment, member_demographics, medical_claims, cohort, exposure
+-- Output : feasibility attrition table (step, n_members, n_dropped, reason)
+--
+-- Status : SCAFFOLD — query to be filled in. Not yet implemented.
+-- =============================================================================
+
+-- TODO: stepwise attrition counts SELECT

@@ -1,0 +1,14 @@
+-- =============================================================================
+-- exposure_index.sql
+-- -----------------------------------------------------------------------------
+-- Derive exposure index dates from claims (vaccine CPT) and the vaccine
+-- registry, and define exposed vs. unexposed person-time. Consumed by
+-- R/02_exposure_indexing.R.
+--
+-- Inputs : cohort, medical_claims, vaccine_registry
+-- Output : exposure (member_id, index_date, exposure status / start-stop)
+--
+-- Status : SCAFFOLD — query to be filled in. Not yet implemented.
+-- =============================================================================
+
+-- TODO: index-date derivation + exposure assignment SELECT

@@ -1,0 +1,30 @@
+---
+title: "Synthetic RWE Vaccine-Effectiveness Study"
+subtitle: "Cohort attrition · KM curve · VE estimate · QC catch"
+format:
+  html:
+    toc: true
+    embed-resources: true
+---
+
+<!--
+  Quarto dashboard — one-page summary of the pipeline outputs.
+  Reads result artifacts written by R/04_survival_analysis.R and R/05_qc_checks.R.
+  Status: SCAFFOLD — section outline only; chunks to be filled in.
+-->
+
+## Study at a glance
+
+_Placeholder — objective, design, and headline VE (see docs/protocol.md)._
+
+## Cohort attrition
+
+_Placeholder — feasibility / attrition table (sql/feasibility_counts.sql)._
+
+## Survival analysis
+
+_Placeholder — Kaplan-Meier curve, incidence rates, adjusted Cox → VE._
+
+## Data-quality catch
+
+_Placeholder — the planted cross-source anomaly, flagged and quantified._

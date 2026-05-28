@@ -1,0 +1,14 @@
+-- =============================================================================
+-- cohort_definition.sql
+-- -----------------------------------------------------------------------------
+-- Eligibility + continuous-enrollment logic. Selects members meeting age,
+-- baseline/washout enrollment, and no-prior-outcome criteria (docs/protocol.md),
+-- and attaches baseline covariates. Consumed by R/01_build_cohort.R.
+--
+-- Inputs : enrollment, member_demographics, medical_claims
+-- Output : cohort (member_id, baseline covariates, eligibility window)
+--
+-- Status : SCAFFOLD — query to be filled in. Not yet implemented.
+-- =============================================================================
+
+-- TODO: eligibility + continuous-enrollment SELECT

@@ -1,0 +1,35 @@
+name: CI
+
+# Scaffold CI: on push/PR, generate a small synthetic dataset, run the pipeline,
+# and run the testthat suite. Fails the build if any contract/recovery test
+# fails. Stages are wired to the Makefile (see PLAN.md §6).
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+
+jobs:
+  pipeline:
+    runs-on: ubuntu-latest
+    container:
+      image: rocker/r-ver:4.4.1
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: System dependencies
+        run: |
+          apt-get update && apt-get install -y --no-install-recommends \
+            make git libcurl4-openssl-dev libssl-dev libxml2-dev
+          rm -rf /var/lib/apt/lists/*
+
+      # TODO: restore R deps via renv once the lockfile exists.
+      # - name: Restore R packages
+      #   run: R -e "install.packages('renv'); renv::restore()"
+
+      - name: Run pipeline (generate -> cohort -> analysis -> qc)
+        run: make data cohort exposure outcome analysis qc
+
+      - name: Run tests
+        run: make test

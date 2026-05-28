@@ -1,0 +1,29 @@
+# --- Generated synthetic data (regenerate with `make data`) ------------------
+data/synthetic/*
+# ...but keep the folder, its README, and any small committed sample.
+!data/synthetic/
+!data/synthetic/README.md
+!data/synthetic/sample/
+
+# --- Pipeline outputs --------------------------------------------------------
+results/
+output/
+dashboard/*.html
+dashboard/*_files/
+*.duckdb
+*.duckdb.wal
+*.parquet
+
+# --- R -----------------------------------------------------------------------
+.Rproj.user/
+.Rhistory
+.RData
+.Ruserdata
+renv/library/
+renv/staging/
+
+# --- OS / editor -------------------------------------------------------------
+.DS_Store
+*~
+.vscode/
+.idea/
