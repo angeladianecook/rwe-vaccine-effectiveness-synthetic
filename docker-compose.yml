@@ -1,0 +1,18 @@
+# DuckDB is an embedded, in-process engine — there is no separate database
+# service to run. This compose file defines a single analysis container that
+# builds the image and runs the R + SQL pipeline against a local DuckDB file.
+services:
+  analysis:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: rwe-vaccine-effectiveness-synthetic:latest
+    working_dir: /work
+    volumes:
+      # Mount the project so generated data and rendered outputs land on the host.
+      - ./:/work
+    environment:
+      # Seed for the synthetic data generator (deterministic runs).
+      RWE_SEED: "20260528"
+    # Override at runtime, e.g.:  docker compose run --rm analysis make all
+    command: ["make", "all"]
